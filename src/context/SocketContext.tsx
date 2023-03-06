@@ -6,7 +6,7 @@ import Peer from 'simple-peer'
 interface ISocketContext {
     call: ICall | undefined,
     callAccepted: boolean,
-    myVideo: React.MutableRefObject<HTMLVideoElement | null>,
+    userStream: MediaStream | undefined,
     userVideo: React.MutableRefObject<HTMLVideoElement | null>,
     stream: MediaStream | undefined,
     name: string,
@@ -38,6 +38,7 @@ const ContextProvider = ({
 }: IContextProvider) => {
 
     const [stream, setStream] = useState<MediaStream>()
+    const [userStream, setUserStream] = useState<MediaStream>()
     const [me, setMe] = useState<string>("")
     const [call, setCall] = useState<ICall>()
     const [callAccepted, setCallAccepted] = useState(false);
@@ -46,7 +47,7 @@ const ContextProvider = ({
 
 
 
-    const myVideo = useRef<HTMLVideoElement | null>(null);
+
     const userVideo = useRef<HTMLVideoElement | null>(null);
     const connectionRef = useRef();
 
@@ -59,9 +60,6 @@ const ContextProvider = ({
         }).then((currentStream) => {
             setStream(currentStream);
 
-            if (myVideo.current) {
-                myVideo.current.srcObject = currentStream
-            }
         })
 
         socket.on('me', (id) => setMe(id));
@@ -90,9 +88,7 @@ const ContextProvider = ({
         });
 
         peer.on('stream', (currentStream) => {
-            if (userVideo.current) {
-                userVideo.current.srcObject = currentStream
-            }
+            setUserStream(currentStream)
         });
 
         if (call) {
@@ -119,9 +115,9 @@ const ContextProvider = ({
         });
 
         peer.on('stream', (currentStream) => {
-            if (userVideo.current) {
-                userVideo.current.srcObject = currentStream
-            }
+
+            setUserStream(currentStream)
+
         });
 
         socket.on('callAccepted', (signal) => {
@@ -137,7 +133,7 @@ const ContextProvider = ({
         setCallEnded(true);
         // @ts-ignore 
         connectionRef.current!.destroy();
-
+        setUserStream(undefined)
         window.location.reload()
     }
 
@@ -148,7 +144,7 @@ const ContextProvider = ({
         <SocketContext.Provider value={{
             call,
             callAccepted,
-            myVideo,
+            userStream,
             userVideo,
             stream,
             name,
